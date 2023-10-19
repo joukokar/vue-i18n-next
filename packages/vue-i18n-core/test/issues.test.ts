@@ -1049,3 +1049,116 @@ test('issue #1547', async () => {
 
   expect(wrapper.html()).toEqual('<div>Deep Linked message</div>')
 })
+
+test('issue #1547 change locale', async () => {
+  const i18n = createI18n({
+    legacy: false,
+    locale: 'en',
+    fallbackLocale: 'en',
+    messages: {
+      en: {
+        product: {
+          tc: {
+            howToUse: {
+              content1: 'Deep Linked message'
+            },
+            usage: {
+              content2: {
+                content: '@:product.tc.howToUse.content1'
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  const ja = {
+    product: {
+      tc: {
+        howToUse: {
+          content1: 'ディープ Linked message'
+        },
+        usage: {
+          content2: {
+            content: '@:product.tc.howToUse.content1'
+          }
+        }
+      }
+    }
+  }
+
+  const App = defineComponent({
+    setup() {
+      const { t } = useI18n()
+      i18n.global.setLocaleMessage('ja', ja)
+      i18n.global.locale.value = 'ja'
+      return { t }
+    },
+    template: `<div>{{ t('product.tc.usage.content2.content') }}</div>`
+  })
+  const wrapper = await mount(App, i18n)
+
+  expect(wrapper.html()).toEqual('<div>ディープ Linked message</div>')
+})
+
+test('issue #1547 flatJson no change locale', async () => {
+  const i18n = createI18n({
+    legacy: false,
+    locale: 'en' as const,
+    flatJson: true,
+    fallbackLocale: 'en',
+    messages: {
+      en: {
+        simpleKey: 'Simple',
+        'deep.key': 'Deep',
+        content: '@:simpleKey @:deep.key'
+      }
+    }
+  })
+
+  const App = defineComponent({
+    setup() {
+      const { t } = useI18n()
+      return { t }
+    },
+    template: `<div>{{ t('content') }}</div>`
+  })
+  const wrapper = await mount(App, i18n)
+
+  expect(wrapper.html()).toEqual('<div>Simple Deep</div>')
+})
+
+test('issue #1547 flatJson change locale', async () => {
+  const i18n = createI18n({
+    legacy: false,
+    locale: 'en',
+    flatJson: true,
+    fallbackLocale: 'en',
+    messages: {
+      en: {
+        simpleKey: 'Simple',
+        'deep.key': 'Deep',
+        content: '@:simpleKey @:simple.deepKey'
+      }
+    }
+  })
+  const ja = {
+    simpleKey: 'シンプル',
+    'deep.key': 'ディープ',
+    content: '@:simpleKey @:simple.deepKey'
+  }
+
+  const App = defineComponent({
+    setup() {
+      const { t } = useI18n()
+      i18n.global.setLocaleMessage('ja', ja)
+      i18n.global.locale.value = 'ja'
+      return { t }
+    },
+    template: `<div>{{ t('content') }}</div>`
+  })
+  const wrapper = await mount(App, i18n)
+
+  expect(wrapper.html()).toEqual('<div>シンプル ディープ</div>')
+})
